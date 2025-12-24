@@ -13,6 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // Clear loading message
       activitiesList.innerHTML = "";
 
+      // Reset activity select options (keep placeholder)
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
+
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
         const activityCard = document.createElement("div");
@@ -20,19 +23,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
+        // Build participants HTML (bulleted list; show info if none)
+        let participantsHtml = "";
+        if (details.participants.length === 0) {
+          participantsHtml = `<p class="info">No participants yet</p>`;
+        } else {
+          participantsHtml = `<ul class="participants-list">` +
+            details.participants.map(p => `<li>${p}</li>`).join("") +
+            `</ul>`;
+        }
+
         activityCard.innerHTML = `
           <h4>${name}</h4>
           <p>${details.description}</p>
           <p><strong>Schedule:</strong> ${details.schedule}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          <div class="participants-section">
+            <h5>Participants</h5>
+            ${participantsHtml}
+          </div>
         `;
 
         activitiesList.appendChild(activityCard);
 
-        // Add option to select dropdown
+        // Add option to select dropdown, disable if full
         const option = document.createElement("option");
         option.value = name;
-        option.textContent = name;
+        option.textContent = name + (spotsLeft <= 0 ? " (full)" : "");
+        if (spotsLeft <= 0) option.disabled = true;
         activitySelect.appendChild(option);
       });
     } catch (error) {
@@ -62,6 +80,9 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+
+        // Refresh activities so participants and availability reflect the signup
+        fetchActivities();
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
